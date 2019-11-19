@@ -48,8 +48,12 @@ Sacramento
 
 The first step in the modeling process is to split your data into separate training and testing datasets. The model will be trained using the training dataset, and the testing dataset will not be used until you are ready to assess model performance. The `rsample::initial_split` function helps with this initial splitting of the data. The `rsample` includes many other helpful functions for splitting the data for cross-validation, bootstrapping, etc.
 
+Proportion set aside for testing will depend on the sample size, etc. 
+
+At this stage, can also stratify before sampling (ex. for classification analysis)
+
 ```{r}
-# Split the dataset, using 75% of the data for training and 25% for testing
+# Split the dataset, using 75% of the data for training and 25% for testing (general rule of thumb)
 housing_split <- Sacramento %>%
   as_tibble() %>%
   dplyr::select(price,type,sqft,beds,baths,latitude,longitude) %>%
@@ -89,13 +93,13 @@ housing_recipe <- housing_training %>%
   # Create dummy variable columns for all factor columns
   step_dummy(all_predictors(),-all_numeric())
 
-housing_recipe
+housing_recipe # doesn't actually do anything, just shows you what the recipe looks like
 
 housing_recipe_prepped <- housing_recipe %>%
   # prep trains the recipe using the training dataset
   prep()
 
-housing_recipe_prepped
+housing_recipe_prepped # can see what the recipe actually did
 
 # Use use the juice function to apply the prepped recipe to the training dataset
 housing_training_juiced <- juice(housing_recipe_prepped)
@@ -120,6 +124,8 @@ Next, we will use the `parsnip` package to define a number of models. Generally,
 After we've defined the model in this way, we can use the `fit` function to fit the model.  
 
 ```{r}
+# could pipe these together, but want to see here what each intermediate object looks like
+
 # Define and fit a linear regression model
 housing_model_lm <- linear_reg() %>%
   set_engine("lm") 
@@ -135,7 +141,7 @@ housing_fit_lm
 housing_model_randomForest <-  rand_forest(trees = 100, mode = "regression") %>%
   set_engine("randomForest") 
 
-housing_model_randomForest
+housing_model_randomForest # just the specification
 
 housing_fit_randomForest <- housing_model_randomForest %>%
   fit(price ~ ., data = housing_training_juiced)
@@ -154,7 +160,7 @@ housing_fit_ranger <- housing_model_ranger %>%
 housing_fit_ranger
 ```
 
-Once we have the model fits, we can use the `predict` function to generate our predictions for our testing dataset. The predict function always produces a dataframe with the same number of rows as observations. Because of this, `bind_cols` can be used to bind the predictions to the original dataframe
+Once we have the model fits, we can use the `predict` function to generate our predictions for our testing dataset. The predict function always produces a dataframe with the same number of rows as observations (even if there are NAs in dataset). Because of this, `bind_cols` can be used to bind the predictions to the original dataframe (not always the case for predict in other contexts)
 
 ```{r}
 # Generate predictions for our testing using the ranger model
@@ -285,8 +291,8 @@ GermanCredit
 ```
 
 ## Data pre-processing 
-``` {r}
-# Split the credit dataset, using 75% of the data for training and 25% for testing, stratified by credit class
+```{r}
+# Split the credit dataset, using 75% of the data for training and 25% for testing, stratified by credit class (strata = "Class")
 # This maintains the ratio of Good and Bad credit classes in both the training and testing datasets
 credit_split <- GermanCredit %>%
   as_tibble() %>%
